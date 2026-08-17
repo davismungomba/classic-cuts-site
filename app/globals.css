@@ -190,6 +190,21 @@ html {
   );
 }
 
+/* Turntable spin for the mobile hero badge (HeroFallback.tsx) — a cheap
+   CSS-only echo of the desktop 3D medallion's Y-axis turn, so phones get
+   the same "it's alive" motion instead of a completely static logo. Self
+   contained perspective() inside the transform, rather than a separate
+   `perspective` property on a parent, so the element doesn't need any
+   extra wrapper just to look three-dimensional while it turns. */
+@keyframes spin-badge {
+  from {
+    transform: perspective(900px) rotateY(0deg);
+  }
+  to {
+    transform: perspective(900px) rotateY(360deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
