@@ -149,11 +149,22 @@ export function Scene({ onContextLost }: { onContextLost: () => void }) {
       ) : null}
       {/* Much lower opacity than the dark-theme version (0.5) — a solid
           black contact shadow that blended into a near-black background
-          reads as a harsh dark smudge on white. */}
+          reads as a harsh dark smudge on white. `scale` (the shadow
+          catcher plane's own footprint) is much bigger than it needs to
+          be for the medallion itself on purpose: this is a flat floor
+          plane, and a portrait phone screen's aspect ratio shows a much
+          narrower horizontal slice of the scene than desktop's does at
+          the same vertical field of view — at the old scale={8}, that
+          was enough for the plane's edge to land inside the visible
+          frame on tall screens and read as a faint hard-edged square
+          hovering under the medallion, instead of a soft shadow with no
+          visible boundary. Scaling it up to well beyond any realistic
+          viewport's frustum removes that edge everywhere rather than
+          re-tuning it per aspect ratio. */}
       <ContactShadows
         position={[0, -2.6, 0]}
         opacity={0.16}
-        scale={8}
+        scale={40}
         blur={2.6}
         far={3}
         color="#000000"
