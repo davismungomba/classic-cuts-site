@@ -19,14 +19,19 @@ import Image from "next/image";
  * WebGL scene, so this stays cheap on exactly the low-power devices this
  * fallback exists for.
  *
- * The logo image itself is intentionally translucent (opacity-40) rather
- * than solid — at full opacity it read as a second, competing block of
- * content sitting on top of the paragraph text on narrow screens (there's
- * far less spare width on a phone than on desktop for the badge to sit in
- * without overlapping the copy), which is exactly the "medallion too
- * solid, fighting the headline" mistake HeroObject.tsx's MEDALLION_OPACITY
- * went through earlier. Same fix here: let it read as a watermark behind
- * the text rather than an object stacked on top of it.
+ * The logo image itself is intentionally translucent rather than solid —
+ * at full opacity it read as a second, competing block of content sitting
+ * on top of the paragraph text on narrow screens (there's far less spare
+ * width on a phone than on desktop for the badge to sit in without
+ * overlapping the copy), the same "medallion too solid, fighting the
+ * headline" mistake HeroObject.tsx's MEDALLION_OPACITY went through
+ * earlier. But this logo is mostly thin linework with a lot of fully
+ * transparent space in the artwork itself (unlike the 3D medallion, which
+ * is a solid-colored disc even where the texture is faint) — the same
+ * opacity percentage that reads as a clear, confident watermark on a
+ * solid shape reads as barely-there on line art, so this needs to sit
+ * meaningfully higher (65%, not 40%) to actually be legible rather than
+ * a ghost of itself.
  *
  * Intentionally NOT used as a loading flash while the 3D chunk downloads
  * on capable/desktop viewports (see HeroCanvas.tsx + references/gotchas.md
@@ -67,7 +72,7 @@ export function HeroFallback({ loading = false }: { loading?: boolean }) {
             alt="Classic Cut Barber Shop logo"
             fill
             sizes="50vw"
-            className="object-contain opacity-40 drop-shadow-[0_12px_22px_rgba(22,35,61,0.2)]"
+            className="object-contain opacity-[0.65] drop-shadow-[0_12px_22px_rgba(22,35,61,0.2)]"
             priority
           />
         </div>
