@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import type { Group } from "three";
 
@@ -60,6 +60,23 @@ const BASE_SCALE = 0.72;
 // watermark. 0.36 keeps the blue/logo legible as an accent without
 // fighting the text for attention.
 const MEDALLION_OPACITY = 0.36;
+// The camera's fov (Scene.tsx) is a VERTICAL field of view, so at a fixed
+// fov the horizontal slice of the scene the camera captures shrinks as the
+// viewport gets narrower — a portrait phone shows much less width at the
+// same vertical framing a wide desktop window does. The medallion's own
+// size is a fixed number of world units, so on a narrow viewport it eats a
+// far bigger share of the frame than it does on desktop: this is what made
+// it balloon to the point of overlapping the headline and, mid-turn, read
+// as a huge slicing "blade" through the paragraph text on a phone — not a
+// rendering bug, just the same fixed-size-object-in-a-narrower-frustum math
+// that previously made the ContactShadows plane's edge peek into frame on
+// mobile (see the `scale={40}` comment in Scene.tsx). Rather than touching
+// the camera's fov (which would also stretch the lighting/Sparkles spread
+// and risks a fisheye look), the medallion's own scale is pulled back on
+// narrow viewports so its on-screen footprint stays closer to how it reads
+// on the desktop widths this design was actually tuned against.
+const REFERENCE_ASPECT = 1.6;
+const MIN_ASPECT_SCALE = 0.55;
 
 /**
  * Hero object for Classic Cuts Barbershop: a chrome medallion with the
@@ -90,6 +107,14 @@ export function HeroObject({ pointer, scrollProgress }: HeroObjectProps) {
   const outerRef = useRef<Group>(null);
   const innerRef = useRef<Group>(null);
   const [logoTexture, setLogoTexture] = useState<THREE.Texture | null>(null);
+  const { size } = useThree();
+  // Recomputed only when the canvas actually resizes (not every frame) —
+  // see the REFERENCE_ASPECT comment above for why this exists.
+  const aspectScale = useMemo(() => {
+    const aspect = size.width / size.height;
+    if (aspect >= REFERENCE_ASPECT) return 1;
+    return Math.max(MIN_ASPECT_SCALE, aspect / REFERENCE_ASPECT);
+  }, [size.width, size.height]);
 
   useEffect(() => {
     let cancelled = false;
@@ -214,7 +239,7 @@ export function HeroObject({ pointer, scrollProgress }: HeroObjectProps) {
     // Subtle breathing scale — cheap extra bit of life on top of the
     // bob + turn, kept small enough to read as alive rather than busy.
     const breathe = 1 + Math.sin(state.clock.elapsedTime * 0.9) * 0.015;
-    outer.scale.setScalar(BASE_SCALE * breathe);
+    outer.scale.setScalar(BASE_SCALE * breathe * aspectScale);
 
     // Inner group: fixed face-camera tilt only, plus a tiny pointer.y
     // nudge — no accumulation here anymore, since the turn moved to the
