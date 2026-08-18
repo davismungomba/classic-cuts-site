@@ -9,11 +9,29 @@ import {
   TowelIcon,
 } from "@/components/ui/icons";
 
+// Each pillar now carries a real shop photo as its backdrop instead of
+// sitting on a flat tinted card — "put pictures there instead of just
+// icons" was the direct ask. None of these four photos are a literal
+// documentary shot of that exact service in progress (the shop's Facebook
+// page doesn't have one for razor shaves, beard trims, or threading
+// specifically) — they're real finished-cut/in-shop photos used as
+// atmosphere behind an honest label, the same way a photo of a barber's
+// hands might illustrate "expert service" without claiming to be that
+// specific service. The icon stays, small, as the one abstract element
+// that's explicitly NOT claiming to be a photo of the thing itself.
 const pillars = [
-  { icon: ScissorsIcon, label: "Skin Fades" },
-  { icon: RazorIcon, label: "Straight-Razor Shaves" },
-  { icon: CombIcon, label: "Beard Trims" },
-  { icon: TowelIcon, label: "Threading & Finish" },
+  { icon: ScissorsIcon, label: "Skin Fades", photo: "/gallery/crisp-taper.jpg" },
+  {
+    icon: RazorIcon,
+    label: "Straight-Razor Shaves",
+    photo: "/gallery/precision-work.jpg",
+  },
+  { icon: CombIcon, label: "Beard Trims", photo: "/gallery/sharp-lines.jpg" },
+  {
+    icon: TowelIcon,
+    label: "Threading & Finish",
+    photo: "/gallery/fresh-fade-1.jpg",
+  },
 ];
 
 export function About() {
@@ -26,50 +44,37 @@ export function About() {
           description={`${business.name} is a neighborhood barbershop in ${business.city}, ${business.state}, at ${business.addressLine1} — covering everything from a clean skin fade to a kid's first haircut, with an old-school attention to detail.`}
         />
 
-        <Reveal delay={0.2} className="flex flex-col justify-center gap-6">
-          {/* This section was icons-and-text only — no actual photo of
-              the shop's own work, which reads as generic ("any barbershop
-              could have made these claims") next to Gallery's real
-              photos further down the page. One real close-up up here
-              earns the "Built On Craft" heading its own visual proof
-              instead of asking the reader to take four icon labels on
-              faith until they scroll further. This is a distinct shot
-              from every Gallery.tsx tile (sourced the same way — the
-              shop's own Facebook photos, not a customer/reviewer photo),
-              so a reader who keeps scrolling doesn't hit the same image
-              twice between here and the Gallery section. */}
-          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-hairline">
-            <Image
-              src="/gallery/crisp-taper.jpg"
-              alt="A crisp taper fade finished at Classic Cut Barber Shop"
-              fill
-              sizes="(min-width: 1024px) 45vw, 100vw"
-              className="object-cover"
-            />
-          </div>
+        <Reveal delay={0.2} className="flex flex-col justify-center">
           <div className="grid grid-cols-2 gap-4 sm:gap-5">
-            {/* Icon chips alternate a tinted red/blue backdrop instead of
-                sitting bare on the card — small touch, but on the first
-                light-theme pass this whole grid was grey icon-on-white
-                cards with color only appearing on hover, which read as
-                colorless by default. */}
-            {pillars.map(({ icon: Icon, label }, i) => (
+            {/* Each card is a real shop photo now (see the pillars comment
+                above for why these aren't literal one-to-one service
+                shots), darkened with the same navy scrim Gallery.tsx uses
+                under its captions so the label stays legible over
+                whatever brightness the photo underneath happens to be.
+                The icon stays small and top-corner rather than the
+                headline element it was before — the photo carries the
+                card now, the icon is just a quick-scan visual tag. */}
+            {pillars.map(({ icon: Icon, label, photo }, i) => (
               <div
                 key={label}
-                className="flex flex-col gap-4 rounded-2xl border border-hairline bg-surface p-6 transition-colors hover:border-brass/60"
+                className="group relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-2xl border border-hairline"
               >
+                <Image
+                  src={photo}
+                  alt=""
+                  fill
+                  sizes="(min-width: 1024px) 22vw, 45vw"
+                  className="object-cover transition-transform duration-700 group-hover:scale-110"
+                />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/25 to-navy/10" />
                 <span
-                  className={`inline-flex h-12 w-12 items-center justify-center rounded-full ${
-                    i % 2 === 0 ? "bg-brass/12" : "bg-steel-blue/14"
+                  className={`absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full backdrop-blur-sm ${
+                    i % 2 === 0 ? "bg-brass/85" : "bg-steel-blue/85"
                   }`}
                 >
-                  <Icon
-                    className={`h-6 w-6 ${
-                      i % 2 === 0 ? "text-brass" : "text-steel-blue"
-                    }`}
-                  />
+                  <Icon className="h-4 w-4 text-ink" />
                 </span>
-                <span className="font-display text-lg leading-tight text-bone">
+                <span className="relative p-4 font-display text-lg leading-tight text-ink">
                   {label}
                 </span>
               </div>

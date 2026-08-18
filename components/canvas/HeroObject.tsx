@@ -77,19 +77,6 @@ const MEDALLION_OPACITY = 0.36;
 // on the desktop widths this design was actually tuned against.
 const REFERENCE_ASPECT = 1.6;
 const MIN_ASPECT_SCALE = 0.55;
-// Touch devices get a still medallion instead of the turntable turn.
-// Every mobile glitch this went through — the oversized coin, the
-// PerformanceMonitor/Sparkles remount loop, the dpr resize tear, the
-// content-settle resize tear — was ultimately something the *continuous
-// motion* exposed: a static object sitting in a static scene has nothing
-// left to resize mid-animation, nothing for a shadow to re-render every
-// frame in sync with, nothing for a performance monitor to be reacting to
-// a moving target's cost while also compensating for. Desktop keeps the
-// full turn (a mouse-driven "pointer: fine" device is never the one these
-// phone recordings were showing problems on). This is a fixed three-
-// quarter angle rather than dead face-on, so it still reads as a coin and
-// not a flat sticker.
-const STATIC_TURN_ANGLE = Math.PI / 6;
 
 /**
  * Hero object for Classic Cuts Barbershop: a chrome medallion with the
@@ -128,17 +115,6 @@ export function HeroObject({ pointer, scrollProgress }: HeroObjectProps) {
     if (aspect >= REFERENCE_ASPECT) return 1;
     return Math.max(MIN_ASPECT_SCALE, aspect / REFERENCE_ASPECT);
   }, [size.width, size.height]);
-
-  // Same "pointer: fine" check Scene.tsx already uses to decide whether to
-  // wire up mouse-parallax listeners at all — a coarse pointer means touch
-  // (phones/tablets), which is where every glitch report so far has come
-  // from. Read once on mount rather than watched continuously: this is a
-  // hardware characteristic, not something that changes mid-session.
-  const [animateTurn, setAnimateTurn] = useState(true);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    setAnimateTurn(window.matchMedia("(pointer: fine)").matches);
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -244,25 +220,20 @@ export function HeroObject({ pointer, scrollProgress }: HeroObjectProps) {
 
   const turnAngle = useRef(0);
 
-  // Touch devices never enter useFrame's per-frame branch below, so they
-  // need this pose set explicitly once instead — otherwise they'd be
-  // stuck at the JSX defaults (POSITION_Y, unscaled BASE_SCALE, dead
-  // face-on) forever. Re-runs if aspectScale changes (a real orientation/
-  // resize change, not the settle-jitter Hero.tsx now insulates this
-  // canvas from) so the still coin stays correctly sized.
-  useEffect(() => {
-    if (animateTurn) return;
-    const outer = outerRef.current;
-    const inner = innerRef.current;
-    if (!outer || !inner) return;
-    outer.rotation.y = STATIC_TURN_ANGLE;
-    outer.position.y = POSITION_Y;
-    outer.scale.setScalar(BASE_SCALE * aspectScale);
-    inner.rotation.x = FACE_CAMERA_TILT_X;
-  }, [animateTurn, aspectScale]);
-
+  // Back to animating on every device, including touch. The freeze was a
+  // hedge from when mobile was still showing a resize-tear glitch — by
+  // that point Hero.tsx (canvas wrapper no longer resizes when the page
+  // content settles), Scene.tsx (fixed dpr, no more live resize; Sparkles
+  // toggles via `visible` instead of mount/unmount), and this file's own
+  // aspectScale (medallion doesn't balloon on narrow screens) had already
+  // closed every resize/remount path those glitches came from. None of
+  // those fixes depend on the medallion holding still — a rotating object
+  // doesn't resize the canvas by itself — so there's no longer a reason
+  // for mobile to look different from desktop here. If a phone recording
+  // still shows a glitch after this ships, it's worth treating as a new
+  // lead rather than reaching for "freeze it" again, since freezing
+  // didn't actually get tested (this repo never had it deployed).
   useFrame((state, delta) => {
-    if (!animateTurn) return;
     const outer = outerRef.current;
     const inner = innerRef.current;
     if (!outer || !inner) return;
