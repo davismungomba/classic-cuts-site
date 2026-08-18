@@ -81,14 +81,24 @@ export function Scene({ onContextLost }: { onContextLost: () => void }) {
       }}
     >
       <PerformanceMonitor
-        onDecline={() => {
-          setDpr([1, 1]);
-          setHighQuality(false);
-        }}
-        onIncline={() => {
-          setDpr([1, 2]);
-          setHighQuality(true);
-        }}
+        // Only dpr is touched on every decline/incline — a cheap resize of
+        // the render target, nothing else in the tree changes. Sparkles
+        // used to be fully unmounted here on decline (and remounted on
+        // incline), but on a device that's borderline on performance —
+        // exactly the device this monitor exists for — mounting/unmounting
+        // a 70-particle points object is itself expensive enough to cause
+        // the next sample to look bad, triggering another decline, whose
+        // remount-on-recovery triggers another incline... a feedback loop
+        // that reads as the medallion/scene rhythmically freezing for a
+        // beat and then jumping, over and over, roughly once a second —
+        // exactly the "weird glitch" pattern a phone recording showed.
+        // `flipflops`/`onFallback` (below) hands the *permanent* decision
+        // to disable Sparkles to drei's own oscillation detector instead
+        // of remaking it on every single sample.
+        onDecline={() => setDpr([1, 1])}
+        onIncline={() => setDpr([1, 2])}
+        flipflops={3}
+        onFallback={() => setHighQuality(false)}
       />
       {/* No forced background color here on purpose (the dark-theme
           version had one) — gl alpha is true, so the canvas stays
@@ -136,17 +146,22 @@ export function Scene({ onContextLost }: { onContextLost: () => void }) {
           near-black background — on the new white background that same
           light color would have been almost invisible, so these are now
           the barbershop blue instead (doubles as more visible "use some
-          blue" color in the hero, not just the medallion). */}
-      {highQuality ? (
-        <Sparkles
-          count={70}
-          scale={[4, 6, 4]}
-          size={2}
-          speed={0.3}
-          color="#3f6bb0"
-          opacity={0.55}
-        />
-      ) : null}
+          blue" color in the hero, not just the medallion).
+
+          Always mounted now — `visible` toggles it off for the low-power
+          fallback instead of removing it from the tree, so a quality
+          change is a cheap flag flip rather than a geometry teardown/
+          rebuild (see the PerformanceMonitor comment above for why that
+          mount/unmount churn was the actual glitch). */}
+      <Sparkles
+        visible={highQuality}
+        count={70}
+        scale={[4, 6, 4]}
+        size={2}
+        speed={0.3}
+        color="#3f6bb0"
+        opacity={0.55}
+      />
       {/* Much lower opacity than the dark-theme version (0.5) — a solid
           black contact shadow that blended into a near-black background
           reads as a harsh dark smudge on white. `scale` (the shadow
