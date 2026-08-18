@@ -11,7 +11,25 @@ export function Hero() {
       id="home"
       className="relative flex min-h-[100svh] w-full flex-col overflow-hidden bg-ink"
     >
-      <div className="absolute inset-0" aria-hidden="true">
+      {/* Deliberately NOT `inset-0` — that ties this wrapper's height to
+          whatever the <section> around it currently measures, and the
+          section's actual height isn't as stable as it looks. The hero
+          copy staggers in via several Reveal/RevealText entrances (delays
+          from 0.1s up to 1.1s) and can nudge the section's content height
+          by a pixel or two as each piece settles (font metrics finishing a
+          swap-in counts too) — every one of those nudges was propagating
+          straight into this div and forcing the WebGL canvas inside
+          HeroCanvas to resize its drawing buffer. A canvas resize on a
+          phone doesn't always redraw cleanly on the same frame: the top
+          portion repaints at the new size while the bottom briefly still
+          holds the old buffer's contents, which is exactly the hard
+          horizontal seam phone recordings kept showing in the first few
+          seconds — never later, because that's the only window any of
+          this settling happens in. Pinning this wrapper to a fixed
+          `100svh` instead means it can no longer be pushed around by
+          whatever the content below is doing, so the canvas has nothing
+          left to spuriously resize for. */}
+      <div className="absolute inset-x-0 top-0 h-[100svh]" aria-hidden="true">
         <HeroCanvas />
       </div>
       <div className="vignette" aria-hidden="true" />
