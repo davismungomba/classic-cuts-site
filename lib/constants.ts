@@ -57,32 +57,49 @@ export const navLinks = [
  * Shaving, skin fade." No pricing is published anywhere, so none is
  * invented here — the Services section marks every entry
  * "Confirm pricing in shop" instead.
+ *
+ * `photo` pairs each service with a real shop photo (same source/sourcing
+ * rule as Gallery.tsx and About.tsx — the shop's own Facebook photos).
+ * Where About.tsx already paired a pillar card with a photo for the same
+ * service (Skin Fade, Beard Trim, Shaving, Threading), this reuses that
+ * exact same photo rather than a different one, so the two sections agree
+ * with each other instead of implying two different "the photo of X"
+ * claims. Men's Haircut and Kids Haircut have no service-specific shot
+ * in the shop's available photos (nothing shows a child specifically),
+ * so those two use general in-shop/finished-cut photos as honest
+ * atmosphere rather than a literal claim about who's in the photo.
  */
 export const services = [
   {
     name: "Men's Haircut",
     description:
       "A clean, tailored cut — classic or modern, finished the old-school way.",
+    photo: "/gallery/shop-in-action.jpg",
   },
   {
     name: "Skin Fade",
     description:
       "A seamless fade taken down to the skin, blended to your preferred length on top.",
+    photo: "/gallery/crisp-taper.jpg",
   },
   {
     name: "Beard Trim",
     description: "Sharp, even beard shaping with a crisp, clean edge.",
+    photo: "/gallery/sharp-lines.jpg",
   },
   {
     name: "Kids Haircut",
     description: "A patient, tidy cut for younger clients.",
+    photo: "/gallery/custom-design.jpg",
   },
   {
     name: "Shaving",
     description: "A traditional, close, straight-razor shave.",
+    photo: "/gallery/precision-work.jpg",
   },
   {
     name: "Eyebrow & Threading",
     description: "Clean eyebrow grooming and threading services.",
+    photo: "/gallery/fresh-fade-1.jpg",
   },
 ] as const;

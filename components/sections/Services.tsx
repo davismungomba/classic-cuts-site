@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { business, services } from "@/lib/constants";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { Reveal } from "@/components/motion/Reveal";
@@ -43,18 +44,30 @@ export function Services() {
                   i % 2 === 0 ? "bg-brass" : "bg-steel-blue"
                 }`}
               />
-              {/* Alternating red/blue on hover — a light nod to the
-                  barber pole rather than leaning on one accent color for
-                  every tile. */}
-              <span
-                className={`font-display text-5xl text-hairline transition-colors duration-500 ${
-                  i % 2 === 0
-                    ? "group-hover:text-brass/50"
-                    : "group-hover:text-steel-blue-bright/50"
-                }`}
-              >
-                {String(i + 1).padStart(2, "0")}
-              </span>
+              {/* The big faded index number used to be the only visual
+                  element here — replaced with a real shop photo (see the
+                  `services` comment in lib/constants.ts for how each one
+                  was picked, including which two don't have a literal
+                  service-specific shot available). The number moves to a
+                  small corner badge on the thumbnail instead of
+                  disappearing outright, so the tile still reads as
+                  "item 01/02/..." at a glance. */}
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-hairline">
+                <Image
+                  src={service.photo}
+                  alt=""
+                  fill
+                  sizes="64px"
+                  className="object-cover"
+                />
+                <span
+                  className={`absolute bottom-0 right-0 rounded-tl-md px-1.5 py-0.5 text-[0.6rem] font-medium text-ink ${
+                    i % 2 === 0 ? "bg-brass" : "bg-steel-blue"
+                  }`}
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+              </div>
               <h3 className="mt-4 font-display text-2xl text-bone">
                 {service.name}
               </h3>
