@@ -32,8 +32,14 @@ function CameraRig({
   return null;
 }
 
+// A fixed cap rather than a runtime-adjustable one — see the comment on
+// <Canvas dpr={...}> below for why this used to be state that
+// PerformanceMonitor updated live, and why that turned out to be exactly
+// what was still glitching in the first couple seconds of every mobile
+// video even after the Sparkles remount loop was fixed.
+const DPR_CAP: [number, number] = [1, 1.5];
+
 export function Scene({ onContextLost }: { onContextLost: () => void }) {
-  const [dpr, setDpr] = useState<[number, number]>([1, 2]);
   const [highQuality, setHighQuality] = useState(true);
   const pointer = useRef({ x: 0, y: 0 });
   const scrollProgress = useRef(0);
@@ -66,7 +72,22 @@ export function Scene({ onContextLost }: { onContextLost: () => void }) {
   return (
     <Canvas
       shadows
-      dpr={dpr}
+      // Fixed for the lifetime of the canvas now, not state PerformanceMonitor
+      // pushed new values into at runtime. Every dpr change makes Three.js
+      // call renderer.setPixelRatio and resize the drawing buffer — on the
+      // phone videos this shipped with, that resize was landing mid-frame
+      // and showing up as a hard horizontal seam (the top of the frame
+      // rendered at the new resolution, the bottom still holding the old
+      // buffer's contents) for the one frame it happened on. It only ever
+      // showed up in the first couple of seconds because that's exactly
+      // when PerformanceMonitor takes its first few readings, while the
+      // GPU/shaders are still warming up and look artificially slow — so
+      // it would flip the dpr once or twice right at the start and never
+      // again. A fixed cap trades a small amount of adaptive sharpness for
+      // never triggering that resize again. The Sparkles visibility toggle
+      // (see below) still gives PerformanceMonitor a real, resize-free
+      // lever for genuinely underpowered devices via onFallback.
+      dpr={DPR_CAP}
       gl={{ antialias: true, alpha: true }}
       camera={{ position: [0, 0.3, CAMERA_BASE_Z], fov: 36 }}
       onCreated={({ gl }) => {
@@ -81,22 +102,14 @@ export function Scene({ onContextLost }: { onContextLost: () => void }) {
       }}
     >
       <PerformanceMonitor
-        // Only dpr is touched on every decline/incline — a cheap resize of
-        // the render target, nothing else in the tree changes. Sparkles
-        // used to be fully unmounted here on decline (and remounted on
-        // incline), but on a device that's borderline on performance —
-        // exactly the device this monitor exists for — mounting/unmounting
-        // a 70-particle points object is itself expensive enough to cause
-        // the next sample to look bad, triggering another decline, whose
-        // remount-on-recovery triggers another incline... a feedback loop
-        // that reads as the medallion/scene rhythmically freezing for a
-        // beat and then jumping, over and over, roughly once a second —
-        // exactly the "weird glitch" pattern a phone recording showed.
-        // `flipflops`/`onFallback` (below) hands the *permanent* decision
-        // to disable Sparkles to drei's own oscillation detector instead
-        // of remaking it on every single sample.
-        onDecline={() => setDpr([1, 1])}
-        onIncline={() => setDpr([1, 2])}
+        // No onDecline/onIncline here anymore — dpr is fixed (see the
+        // Canvas comment above), so there's nothing cheap left for a single
+        // decline/incline sample to usefully change. Only a *sustained*
+        // pattern of trouble (flipflops of decline↔incline) permanently
+        // switches off Sparkles via onFallback, which just flips a
+        // `visible` prop rather than mounting/unmounting anything — no
+        // canvas resize, no geometry rebuild, so this genuinely can't
+        // reproduce either glitch this scene has shown on mobile so far.
         flipflops={3}
         onFallback={() => setHighQuality(false)}
       />
